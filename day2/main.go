@@ -114,20 +114,21 @@ type passwordInfo struct {
 
 func isValidPasswordByCount(info passwordInfo) bool {
 	count := 0
-	for _, r := range info.password {
-		// remaining := len(info.password) - i
-		// if count+remaining < info.policy.minCount {
-		// 	return false
-		// }
+	for i, r := range info.password {
+		remaining := len(info.password) - i
+		if count+remaining < info.policy.constraint1 {
+			return false
+		}
 
 		letter := string(r)
 		if string(letter) != info.policy.targetLetter {
 			continue
 		}
+
 		count++
-		// if count > info.policy.maxCount {
-		// 	return false
-		// }
+		if count > info.policy.constraint2 {
+			return false
+		}
 	}
 
 	return count >= info.policy.constraint1 && count <= info.policy.constraint2
