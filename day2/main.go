@@ -134,22 +134,13 @@ func isValidPasswordByCount(info passwordInfo) bool {
 }
 
 func isValidPasswordByIndex(info passwordInfo) bool {
-	seen := false
-	for i, r := range info.password {
-		letter := string(r)
-		if string(letter) != info.policy.targetLetter {
-			continue
-		}
-
-		if i+1 == info.policy.constraint1 {
-			seen = true
-		} else if i+1 == info.policy.constraint2 {
-			if seen {
-				return false
-			}
-			seen = true
-		}
+	count := 0
+	if string(info.password[info.policy.constraint1-1]) == info.policy.targetLetter {
+		count++
+	}
+	if string(info.password[info.policy.constraint2-1]) == info.policy.targetLetter {
+		count++
 	}
 
-	return seen
+	return count == 1
 }
