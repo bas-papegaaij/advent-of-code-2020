@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 const inputFile = "input.txt"
 const preambleSize = 25
 
 func main() {
+	startProgram := time.Now()
+	defer func() {
+		fmt.Println("Total Program time:", time.Since(startProgram))
+	}()
+
 	file, err := os.Open(inputFile)
 	if err != nil {
 		panic(err)
@@ -27,6 +33,7 @@ func main() {
 		numbers = append(numbers, val)
 	}
 
+	start := time.Now()
 	var firstBadNumber int
 	for i, val := range numbers[preambleSize:] {
 		if !isValidNumber(val, numbers[i:i+preambleSize]) {
@@ -34,9 +41,12 @@ func main() {
 			break
 		}
 	}
+	fmt.Println("Finding bad number took:", time.Since(start))
 	fmt.Println("First bad number is:", firstBadNumber)
 
+	start = time.Now()
 	vuln := findContiguousSum(firstBadNumber, numbers)
+	fmt.Println("Finding vuln took:", time.Since(start))
 	fmt.Println("The vulnerability is:", vuln)
 }
 
@@ -55,16 +65,18 @@ func isValidNumber(num int, previousValues []int) bool {
 
 func findContiguousSum(sumValue int, values []int) int {
 	startIndex, endIndex := 0, 1
-	sum := 0
+	sum := values[startIndex] + values[endIndex]
 	for sum != sumValue {
-		sum = sumValues(startIndex, endIndex, values)
 		if sum < sumValue {
-			// We haven't hit the wanted value yet. Grow the window by 1 and check the next sum
+			// extend the window, add the new number to our running sum
 			endIndex++
-		} else if sum > sumValue {
-			// reset the window to its minimum size, starting from the next number
+			sum += values[endIndex]
+		}
+		if sum > sumValue {
+			// have to reset our window size here
 			startIndex++
 			endIndex = startIndex + 1
+			sum = values[startIndex] + values[endIndex]
 		}
 	}
 
@@ -86,12 +98,4 @@ func findExtremes(values []int) (int, int) {
 		}
 	}
 	return smallest, largest
-}
-
-func sumValues(start int, end int, sourceValues []int) int {
-	sum := 0
-	for _, val := range sourceValues[start : end+1] {
-		sum += val
-	}
-	return sum
 }
