@@ -12,10 +12,7 @@ const inputFile = "input.txt"
 const preambleSize = 25
 
 func main() {
-	startProgram := time.Now()
-	defer func() {
-		fmt.Println("Total Program time:", time.Since(startProgram))
-	}()
+	timings := make(map[string]time.Duration)
 
 	file, err := os.Open(inputFile)
 	if err != nil {
@@ -24,6 +21,8 @@ func main() {
 
 	numbers := []int{}
 	scanner := bufio.NewScanner(file)
+	startProgram := time.Now()
+	start := time.Now()
 	for scanner.Scan() {
 		t := scanner.Text()
 		val, err := strconv.Atoi(t)
@@ -32,8 +31,9 @@ func main() {
 		}
 		numbers = append(numbers, val)
 	}
+	timings["parse"] = time.Since(start)
 
-	start := time.Now()
+	start = time.Now()
 	var firstBadNumber int
 	for i, val := range numbers[preambleSize:] {
 		if !isValidNumber(val, numbers[i:i+preambleSize]) {
@@ -41,13 +41,17 @@ func main() {
 			break
 		}
 	}
-	fmt.Println("Finding bad number took:", time.Since(start))
-	fmt.Println("First bad number is:", firstBadNumber)
+	timings["part1"] = time.Since(start)
 
 	start = time.Now()
-	vuln := findContiguousSum(firstBadNumber, numbers)
-	fmt.Println("Finding vuln took:", time.Since(start))
+	vuln := findvulnerability(firstBadNumber, numbers)
+	timings["part2"] = time.Since(start)
+	timings["total"] = time.Since(startProgram)
+
+	fmt.Println("First bad number is:", firstBadNumber)
 	fmt.Println("The vulnerability is:", vuln)
+
+	fmt.Println("Timings:", timings)
 }
 
 // checks if num is the sum of any 2 numbers from previousValues
@@ -63,12 +67,11 @@ func isValidNumber(num int, previousValues []int) bool {
 	return false
 }
 
-func findContiguousSum(sumValue int, values []int) int {
+func findvulnerability(sumValue int, values []int) int {
 	startIndex, endIndex := 0, 1
 	sum := values[startIndex] + values[endIndex]
 	for sum != sumValue {
 		if sum < sumValue {
-			// extend the window, add the new number to our running sum
 			endIndex++
 			sum += values[endIndex]
 		}
