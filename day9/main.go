@@ -73,22 +73,18 @@ func findContiguousSum(sumValue int, values []int) int {
 			sum += values[endIndex]
 		}
 		if sum > sumValue {
-			// have to reset our window size here
+			sum -= values[startIndex]
 			startIndex++
-			endIndex = startIndex + 1
-			sum = values[startIndex] + values[endIndex]
 		}
 	}
 
-	smallest, largest := findExtremes(values[startIndex : endIndex+1])
+	smallest, largest := minMax(values[startIndex : endIndex+1])
 
 	return smallest + largest
 }
 
-const maxInt = int(^uint(0) >> 1)
-
-func findExtremes(values []int) (int, int) {
-	smallest, largest := maxInt, 0
+func minMax(values []int) (int, int) {
+	smallest, largest := values[0], values[0]
 	for _, val := range values {
 		if val < smallest {
 			smallest = val
