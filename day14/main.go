@@ -37,7 +37,7 @@ func main() {
 	}
 
 	// part 1 - assuming 64 bit is wide enough for the sum
-	fmt.Println("Sum of all memory addresses:", part1Memory.sum())
+	fmt.Println("Part 1:", part1Memory.sum())
 	fmt.Println("Part 2", part2Memory.sum())
 }
 
