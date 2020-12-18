@@ -1,0 +1,166 @@
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"strings"
+)
+
+const inputFile = "input.txt"
+const simCount = 6
+
+type cube struct {
+	width  int
+	depth  int
+	layers []layer
+}
+
+type layer []bool
+
+func main() {
+	data, err := ioutil.ReadFile(inputFile)
+	if err != nil {
+		panic(err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	simState := newCube(len(lines[0]), len(lines))
+	simState.layers[0].parseData(lines)
+
+	for i := 0; i < simCount; i++ {
+		simState.simulate()
+	}
+	activeCount := simState.getActive()
+	fmt.Println("part1:", activeCount)
+}
+
+func newCube(width int, depth int) *cube {
+	return &cube{
+		width:  width,
+		depth:  depth,
+		layers: []layer{makeLayer(width, depth)},
+	}
+}
+
+func (c *cube) expand() {
+	preLayer := makeLayer(c.width, c.depth)
+	c.layers = append([]layer{preLayer}, c.layers...)
+	postLayer := makeLayer(c.width, c.depth)
+	c.layers = append(c.layers, postLayer)
+}
+
+func (c *cube) copy() *cube {
+	c2 := cube{
+		width:  c.width,
+		depth:  c.depth,
+		layers: make([]layer, len(c.layers)),
+	}
+
+	for i, l := range c.layers {
+		c2.layers[i] = l.copy()
+	}
+
+	return &c2
+}
+
+func (c *cube) simulate() {
+	c.expand()
+	tmp := c.copy()
+	for z := 0; z < len(c.layers); z++ {
+		for y := 0; y < c.depth; y++ {
+			for x := 0; x < c.width; x++ {
+				s := tmp.getNewState(x, y, z)
+				c.setState(x, y, z, s)
+			}
+		}
+	}
+}
+
+func (c *cube) getActive() int {
+	count := 0
+	for z := 0; z < len(c.layers); z++ {
+		for y := 0; y < c.depth; y++ {
+			for x := 0; x < c.width; x++ {
+				if c.getState(x, y, z) {
+					count++
+				}
+			}
+		}
+	}
+	return count
+}
+
+func (c *cube) getNewState(x int, y int, z int) bool {
+	activeNeighbours := 0
+	for x2 := x - 1; x2 <= x+1; x2++ {
+		for y2 := y - 1; y2 <= y+1; y2++ {
+			for z2 := z - 1; z2 <= z+1; z2++ {
+				if x2 == x && y2 == y && z2 == z {
+					continue
+				}
+
+				if c.getState(x2, y2, z2) {
+					activeNeighbours++
+				}
+			}
+		}
+	}
+
+	// if active, stay active if exactly 2 or 3 neighbours are also active
+	if c.getState(x, y, z) == true {
+		return activeNeighbours == 2 || activeNeighbours == 3
+	}
+
+	// if inactive, activate if exactly 3 neighbours are active
+	return activeNeighbours == 3
+}
+
+func (c *cube) getState(x int, y int, z int) bool {
+	// anything outside of the bounds of the current cube is inactive
+	if z < 0 || z >= len(c.layers) ||
+		x < 0 || x >= c.width ||
+		y < y || y >= c.depth {
+		return false
+	}
+
+	return c.layers[z].getState(x, y)
+}
+
+func (c *cube) setState(x int, y int, z int, state bool) {
+	c.layers[z].setState(x, y, state)
+}
+
+func makeLayer(width int, depth int) layer {
+	return make(layer, width*depth)
+}
+
+func (l layer) getState(x int, y int) bool {
+	return l[y*x+x]
+}
+
+func (l layer) setState(x int, y int, state bool) {
+	l[y*x+x] = state
+}
+
+func (l layer) copy() layer {
+	newLayer := make(layer, len(l))
+	copy(newLayer, l)
+	return newLayer
+}
+
+func (l layer) parseData(data []string) {
+	for y, line := range data {
+		for x, r := range line {
+			var active bool
+			switch r {
+			case '#':
+				active = true
+			case '.':
+				active = false
+			default:
+				panic(fmt.Sprintf("bad state character %v", r))
+			}
+			l.setState(x, y, active)
+		}
+	}
+}
